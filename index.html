@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musik Marketplace - Pi Network</title>
+    <!-- SDK Resmi Pi Network -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #e67e22, #8e44ad);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-pi {
+            background-color: #f1c40f;
+            color: #2c3e50;
+            border: none;
+            padding: 10px 18px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-pi:hover {
+            background-color: #f39c12;
+            color: white;
+        }
+        .user-info {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+        .card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .price-tag {
+            font-size: 16px;
+            font-weight: bold;
+            color: #8e44ad;
+            margin-bottom: 12px;
+        }
+        .btn-buy {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-buy:hover {
+            background-color: #219150;
+        }
+        #status-log {
+            margin-top: 25px;
+            background: #eef2f7;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h2>🎵 Musik Marketplace</h2>
+            <p style="font-size: 12px;">Beli Lagu Favorit dengan Pi Coin (Testnet)</p>
+        </div>
+        <div id="auth-section">
+            <button class="btn-pi" onclick="loginWithPi()">Login Pi Network</button>
+        </div>
+    </header>
+
+    <div class="music-grid">
+        <!-- Item Musik 1 -->
+        <div class="card">
+            <div>
+                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500" alt="Lagu 1">
+                <h3>Instrumen Santai Akustik</h3>
+                <p>Artis: Didik Music</p>
+                <div class="price-tag">1.0 Test-Pi</div>
+            </div>
+            <button class="btn-buy" onclick="buyMusic('Instrumen Santai Akustik', 1.0)">Beli Sekarang</button>
+        </div>
+
+        <!-- Item Musik 2 -->
+        <div class="card">
+            <div>
+                <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500" alt="Lagu 2">
+                <h3>Beat Electronic Modern</h3>
+                <p>Artis: Producer X</p>
+                <div class="price-tag">2.5 Test-Pi</div>
+            </div>
+            <button class="btn-buy" onclick="buyMusic('Beat Electronic Modern', 2.5)">Beli Sekarang</button>
+        </div>
+
+        <!-- Item Musik 3 -->
+        <div class="card">
+            <div>
+                <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500" alt="Lagu 3">
+                <h3>Jazz Malam Hari</h3>
+                <p>Artis: Studio Band</p>
+                <div class="price-tag">0.5 Test-Pi</div>
+            </div>
+            <button class="btn-buy" onclick="buyMusic('Jazz Malam Hari', 0.5)">Beli Sekarang</button>
+        </div>
+    </div>
+
+    <!-- Status Log -->
+    <div id="status-log">
+        <strong>Status Aplikasi:</strong> <span id="log-text">Siap. Silakan login dengan akun Pi Anda.</span>
+    </div>
+
+    <script>
+        // Inisialisasi Pi SDK di Jaringan Testnet
+        const Pi = window.Pi;
+        Pi.init({ version: "2.0", sandbox: true });
+
+        let currentUser = null;
+
+        function log(message) {
+            document.getElementById('log-text').innerText = message;
+            console.log(message);
+        }
+
+        // Fungsi Login dengan Pi Sign-In
+        async function loginWithPi() {
+            try {
+                log("Sedang menghubungkan ke Pi Network...");
+                const scopes = ['username', 'payments'];
+                const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                currentUser = auth.user;
+                
+                document.getElementById('auth-section').innerHTML = `
+                    <div class="user-info">👤 Hi, ${currentUser.username}</div>
+                `;
+                log(`Login Berhasil! Selamat datang ${currentUser.username}`);
+            } catch (error) {
+                log("Gagal Login: " + error.message);
+            }
+        }
+
+        function onIncompletePaymentFound(payment) {
+            log("Ditemukan pembayaran belum selesai ID: " + payment.identifier);
+        }
+
+        // Fungsi Pembayaran Pi (Pi Payment)
+        async function buyMusic(title, amount) {
+            if (!currentUser) {
+                alert("Silakan Login dengan Pi Network terlebih dahulu!");
+                loginWithPi();
+                return;
+            }
+
+            log(`Memulai proses pembelian '${title}' seharga ${amount} Test-Pi...`);
+
+            const paymentData = {
+                amount: amount,
+                memo: `Pembelian musik: ${title}`,
+                metadata: { songTitle: title }
+            };
+
+            const paymentCallbacks = {
+                onReadyForServerApproval: function(paymentId) {
+                    log(`Pembayaran dibuat (ID: ${paymentId}). Menunggu persetujuan server...`);
+                },
+                onReadyForServerCompletion: function(paymentId, txid) {
+                    log(`Transaksi selesai di Blockchain! TXID: ${txid}`);
+                    alert(`Pembayaran Berhasil!\nTerima kasih telah membeli "${title}".`);
+                },
+                onCancel: function(paymentId) {
+                    log("Pembayaran dibatalkan oleh pengguna.");
+                },
+                onError: function(error, payment) {
+                    log("Terjadi kesalahan pembayaran: " + error.message);
+                }
+            };
+
+            try {
+                await Pi.createPayment(paymentData, paymentCallbacks);
+            } catch (err) {
+                log("Gagal membuat pembayaran: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
